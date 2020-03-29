@@ -20,21 +20,29 @@ func (account Account) String() string {
 }
 
 type Amount struct {
-	value    decimal.Decimal
+	value    decimal.NullDecimal
 	currency Currency
 }
 
 func (amount Amount) String() string {
-	return amount.value.String() + " " + amount.currency.String()
+	return amount.value.Decimal.String() + " " + amount.currency.String()
 }
 
 type Comment string
 
+func (comment Comment) IsActive() bool {
+	return len(string(comment)) > 0
+}
+
 func (comment Comment) String() string {
-	return string(comment)
+	return "; " + string(comment)
 }
 
 type Cost Amount
+
+func (cost Cost) IsActive() bool {
+	return Amount(cost).value.Valid || len(string(Amount(cost).currency)) > 0
+}
 
 func (cost Cost) String() string {
 	return Amount(cost).String()
@@ -48,9 +56,21 @@ func (currency Currency) String() string {
 
 type Flag int
 
+const (
+	Inactive   Flag = -1
+	Complete   Flag = 0
+	Incomplete Flag = 1
+)
+
+func (flag Flag) IsActive() bool {
+	return flag != Inactive
+}
+
 func (flag Flag) String() string {
 	var represenation string
 	switch flag {
+	case -1:
+		represenation = ""
 	case 0:
 		represenation = "!"
 	case 1:
@@ -63,15 +83,14 @@ func (flag Flag) String() string {
 
 }
 
-const (
-	Complete   Flag = 0
-	Incomplete Flag = 1 // TODO are there more relevant flags?
-)
-
 type Link string
 
+func (link Link) IsActive() bool {
+	return len(string(link)) > 0
+}
+
 func (link Link) String() string {
-	return string(link)
+	return "^" + string(link)
 }
 
 type Metadata struct {
@@ -85,14 +104,22 @@ func (metadata Metadata) String() string {
 
 type Narration string
 
+func (narration Narration) IsActive() bool {
+	return len(string(narration)) > 0
+}
+
 func (narration Narration) String() string {
-	return string(narration)
+	return "\"" + string(narration) + "\""
 }
 
 type Payee string
 
+func (payee Payee) IsActive() bool {
+	return len(string(payee)) > 0
+}
+
 func (payee Payee) String() string {
-	return string(payee)
+	return "\"" + string(payee) + "\""
 }
 
 type Posting struct {
@@ -106,28 +133,67 @@ type Posting struct {
 }
 
 func (posting Posting) String() string {
-	// TODO account for missing entries
 	var represenation string
 
-	represenation += posting.flag.String()
-	represenation += " " + posting.account.String()
-	represenation += " " + posting.cost.String()
-	represenation += " @ " + posting.price.String()
-	represenation += " ; " + posting.comment.String()
+	if posting.flag.IsActive() {
+		represenation += posting.flag.String() + " "
+	}
+	represenation += posting.account.String()
+	if posting.cost.IsActive() {
+		represenation += " " + posting.cost.String()
+	}
+	if posting.price.IsActive() {
+		represenation += " " + posting.price.String()
+	}
+	if len(posting.comment.String()) > 0 {
+		represenation += " " + posting.comment.String()
+	}
 
 	return represenation
 }
 
-type Price Amount
+type Price struct {
+	amount Amount
+	kind   int
+}
+
+const (
+	variable_rate  int = 0
+	fixed_rate     int = 1
+	variable_total int = 2
+	fixed_total    int = 3
+)
+
+func (price Price) IsActive() bool {
+	return Amount(price.amount).value.Valid || len(string(Amount(price.amount).currency)) > 0
+}
 
 func (price Price) String() string {
-	return Amount(price).String()
+	var prefix string
+	var postfix string
+	switch price.kind {
+	case variable_rate:
+		prefix = "@ "
+	case fixed_rate:
+		prefix = "{"
+		postfix = "}"
+	case variable_total:
+		prefix = "@@ "
+	case fixed_total:
+		prefix = "{{"
+		postfix = "}}"
+	}
+	return prefix + Amount(price.amount).String() + postfix
 }
 
 type Tag string
 
+func (tag Tag) IsActive() bool {
+	return len(string(tag)) > 0
+}
+
 func (tag Tag) String() string {
-	return string(tag)
+	return "#" + string(tag)
 }
 
 type TransactionHeader struct {
@@ -142,16 +208,25 @@ type TransactionHeader struct {
 }
 
 func (transactionHeader TransactionHeader) String() string {
-	// TODO account for missing entries
 	var represenation string
 
 	represenation = strings.Split(transactionHeader.date.Format(time.RFC3339), "T")[0]
 	represenation += " " + transactionHeader.flag.String()
-	represenation += " \"" + transactionHeader.payee.String() + "\""
-	represenation += " \"" + transactionHeader.narration.String() + "\""
-	represenation += " #" + transactionHeader.tag.String()
-	represenation += " ^" + transactionHeader.link.String()
-	represenation += " ; " + transactionHeader.comment.String()
+	if transactionHeader.payee.IsActive() {
+		represenation += " " + transactionHeader.payee.String()
+	}
+	if transactionHeader.narration.IsActive() {
+		represenation += " " + transactionHeader.narration.String()
+	}
+	if transactionHeader.tag.IsActive() {
+		represenation += " " + transactionHeader.tag.String()
+	}
+	if transactionHeader.link.IsActive() {
+		represenation += " " + transactionHeader.link.String()
+	}
+	if transactionHeader.comment.IsActive() {
+		represenation += " " + transactionHeader.comment.String()
+	}
 	for _, entry := range transactionHeader.metadata {
 		represenation += "\n" + strings.Repeat(" ", OFFSET_METADATA) + entry.String()
 	}
