@@ -152,14 +152,38 @@ func (posting Posting) String() string {
 	return represenation
 }
 
-type Price Amount
+type Price struct {
+	amount Amount
+	kind   int
+}
+
+const (
+	variable_rate  int = 0
+	fixed_rate     int = 1
+	variable_total int = 2
+	fixed_total    int = 3
+)
 
 func (price Price) IsActive() bool {
-	return Amount(price).value.Valid || len(string(Amount(price).currency)) > 0
+	return Amount(price.amount).value.Valid || len(string(Amount(price.amount).currency)) > 0
 }
 
 func (price Price) String() string {
-	return "@ " + Amount(price).String()
+	var prefix string
+	var postfix string
+	switch price.kind {
+	case variable_rate:
+		prefix = "@ "
+	case fixed_rate:
+		prefix = "{"
+		postfix = "}"
+	case variable_total:
+		prefix = "@@ "
+	case fixed_total:
+		prefix = "{{"
+		postfix = "}}"
+	}
+	return prefix + Amount(price.amount).String() + postfix
 }
 
 type Tag string

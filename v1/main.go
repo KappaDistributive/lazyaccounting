@@ -60,8 +60,11 @@ func main() {
 	fmt.Println("Sample payee:", payee)
 
 	price := Price{
-		value:    value,
-		currency: "EUR",
+		amount: Amount{
+			value:    value,
+			currency: "EUR",
+		},
+		kind: 0,
 	}
 	fmt.Println("Sample price:", price)
 
