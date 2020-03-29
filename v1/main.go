@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	decimal "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 func main() {
@@ -14,7 +14,11 @@ func main() {
 	}
 	fmt.Println("Sample account:", account)
 
-	value, _ := decimal.NewFromString("1.5")
+	temp, _ := decimal.NewFromString("1.5")
+	value := decimal.NullDecimal{
+		Decimal: temp,
+		Valid:   true,
+	}
 
 	amount := Amount{
 		value:    value,
@@ -94,6 +98,14 @@ func main() {
 		postings: []Posting{posting},
 	}
 	fmt.Println("Sample transaction:")
+	fmt.Println(transaction)
+
+	posting.flag = -1
+	transaction = Transaction{
+		header:   header,
+		postings: []Posting{posting},
+	}
+	fmt.Println("Sample transaction with inactive flag:")
 	fmt.Println(transaction)
 
 }
