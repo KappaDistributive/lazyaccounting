@@ -1,7 +1,7 @@
 package main
 
 import (
-	decimal "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 	"strings"
 	"time"
 )
@@ -51,6 +51,8 @@ type Flag int
 func (flag Flag) String() string {
 	var represenation string
 	switch flag {
+	case -1:
+		represenation = ""
 	case 0:
 		represenation = "!"
 	case 1:
@@ -111,9 +113,17 @@ func (posting Posting) String() string {
 
 	represenation += posting.flag.String()
 	represenation += " " + posting.account.String()
-	represenation += " " + posting.cost.String()
-	represenation += " @ " + posting.price.String()
-	represenation += " ; " + posting.comment.String()
+	represenation += " " + posting.amount.String()
+	if string(posting.cost.currency) != "" {
+		represenation += " " + posting.cost.String()
+	}
+	if string(posting.price.currency) != "" {
+		represenation += " @ " + posting.price.String()
+	}
+	if len(posting.comment.String()) > 0 {
+
+		represenation += " ; " + posting.comment.String()
+	}
 
 	return represenation
 }
