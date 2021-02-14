@@ -15,6 +15,7 @@
 secret/*
 lazybeans/converters/secret_converter.py
 main.py
+temp.py
 
 # Python
 .mypy_cache
