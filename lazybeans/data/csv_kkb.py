@@ -42,6 +42,10 @@ class CsvKKBEntry:
             amount_in_euro=Decimal(
                 row["Betrag in Euro"].replace(",", ".")
             ) if row["Betrag in Euro"] != "" else None,
-            amazon_points=Decimal(row["Amazon Punkte"]),
-            prime_points=Decimal(row["Prime Punkte"]),
+            amazon_points=Decimal(
+                row["Amazon Punkte"] if row["Amazon Punkte"] != "" else 0
+            ),
+            prime_points=Decimal(
+                row["Prime Punkte"] if row["Prime Punkte"] != "" else 0
+            ),
         )
